@@ -1,2 +1,12 @@
-.venv/
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Environment
 .env
+.venv/
+
+# IDE files
+.idea/
+.vscode/
