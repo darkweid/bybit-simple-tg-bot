@@ -21,7 +21,7 @@ TELEGRAM_TOKEN = env.str("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = env.str("TELEGRAM_CHAT_ID")
 SYMBOL = env.str("SYMBOL")
 TARGET_PROFIT_PERCENT = env.float("TARGET_PROFIT_PERCENT")
-AMOUNT = 10
+AMOUNT = env.float("AMOUNT")
 
 # Инициализация Telegram бота
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -43,19 +43,19 @@ class TradingBot:
     async def open_position(self) -> bool:
         """Открытие позиции"""
         try:
+            order_book = await self.get_order_book()
             response = session.place_order(
                 category="spot",
                 symbol=SYMBOL,
                 side="Buy",
                 orderType="MARKET",
                 qty=str(AMOUNT),
-                marketUnit="quoteCoin"
+                marketUnit="baseCoin"
             )
 
             if response['retCode'] == 0:
                 order_id = response['result']['orderId']
-                order_book = await self.get_order_book()
-                entry_price = order_book.get('bid')
+                entry_price = order_book.get('ask')
                 target_price = round(entry_price * (1 + TARGET_PROFIT_PERCENT / 100), 3)
                 target_amount = round(AMOUNT * (1 + TARGET_PROFIT_PERCENT / 100), 3)
 
@@ -81,27 +81,25 @@ class TradingBot:
     async def close_position(self) -> bool:
         """Закрытие позиции"""
         try:
+            order_book = await self.get_order_book()
             response = session.place_order(
                 category="spot",
                 symbol=SYMBOL,
                 side="Sell",
                 orderType="MARKET",
-                qty=str(self.active_position['target_amount']),
-                marketUnit="quoteCoin"
+                qty=str(AMOUNT),
+                marketUnit="baseCoin"
             )
 
             if response['retCode'] == 0:
-                order_book = await self.get_order_book()
-                ask_price = order_book.get('ask')
-                profit = (ask_price / self.active_position['entry_price'] - 1) * self.active_position['amount']
-                profit_percentage = ((ask_price / self.active_position['entry_price']) - 1) * 100
+                bid_price = order_book.get('bid')
+                profit_percentage = ((bid_price / self.active_position['entry_price']) - 1) * 100
 
                 await self.send_notification(f"✅ Позиция закрыта с прибылью!\n"
                                              f"Валютная пара: {self.active_position['symbol']}\n"
-                                             f"Прибыль: {profit:.2f} USDT\n"
                                              f"Процент прибыли: {profit_percentage:.2f}%\n"
                                              f"Цена входа: {self.active_position['entry_price']}\n"
-                                             f"Цена выхода: {ask_price}")
+                                             f"Цена выхода: {bid_price}")
                 logger.info(f"Позиция закрыта успешно: {self.active_position}")
                 self.active_position = None
 
@@ -124,11 +122,11 @@ class TradingBot:
                     ask_price = order_book.get('ask')
 
                     if bid_price is None or ask_price is None:
-                        logger.error("Не удалось получить цены для ордербука")
+                        logger.error("Не удалось получить цены для orderbook")
                         continue
 
                     # Вычисление прибыли
-                    if ask_price >= self.active_position['target_price']:
+                    if bid_price >= self.active_position['target_price']:
                         # Закрываем позицию при достижении целевой прибыли
                         await self.close_position()
 
@@ -146,6 +144,11 @@ class TradingBot:
             logger.info(f"Отправлено уведомление в Telegram: {message}")
         except Exception as e:
             logger.error(f"Ошибка при отправке уведомления в Telegram: {e}")
+
+    @staticmethod
+    def calculate_target(amount) -> float:
+        """Вычисление целевой цены"""
+        return round(amount * (1 + TARGET_PROFIT_PERCENT / 100), 3)
 
     @staticmethod
     async def get_order_book() -> dict:
@@ -236,8 +239,10 @@ async def main():
 
     logger.info(f"Бот запущен. Валютная пара: {SYMBOL}, Целевая прибыль: {TARGET_PROFIT_PERCENT}%")
     await trading_bot.send_notification(
-        f"🚀 Бот запущен. Валютная пара: {SYMBOL}\n"
-        f"Целевая прибыль: {TARGET_PROFIT_PERCENT}%")
+        f"🚀 Бот запущен.\n"
+        f"Валютная пара: {SYMBOL}\n"
+        f"Целевая прибыль: {TARGET_PROFIT_PERCENT}%\n"
+        f"Количество: {AMOUNT}")
 
     # Добавление кнопок меню
     await set_main_menu(bot)
