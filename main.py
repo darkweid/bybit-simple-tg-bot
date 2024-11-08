@@ -6,15 +6,15 @@ from pybit.unified_trading import HTTP
 import logging
 from environs import Env
 
-# Загрузка переменных окружения
+# Loading environment variables
 env = Env()
 env.read_env()
 
-# Настройка логирования
+# Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Загрузка конфигурации из .env
+# Loading configuration from .env
 BYBIT_API_KEY = env.str("API_KEY")
 BYBIT_API_SECRET = env.str("API_SECRET")
 TELEGRAM_TOKEN = env.str("TELEGRAM_TOKEN")
@@ -23,11 +23,11 @@ SYMBOL = env.str("SYMBOL")
 TARGET_PROFIT_PERCENT = env.float("TARGET_PROFIT_PERCENT")
 AMOUNT = env.float("AMOUNT")
 
-# Инициализация Telegram бота
+# Initialize Telegram bot
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# Инициализация клиента Bybit
+# Initialize Bybit client
 session = HTTP(
     testnet=True,
     api_key=BYBIT_API_KEY,
@@ -37,11 +37,22 @@ session = HTTP(
 
 class TradingBot:
     def __init__(self):
+        """Initializes the TradingBot class.
+
+        Sets the initial state of the bot with no active position and no monitoring task.
+        """
         self.active_position = None
         self.monitor_task = None
 
     async def open_position(self) -> bool:
-        """Открытие позиции"""
+        """Opens a new trading position.
+
+        Places a market order to buy the specified amount of the selected trading pair.
+        After opening, calculates the target price based on the profit percentage and starts monitoring the position.
+
+        Returns:
+            bool: True if the position was opened successfully, False otherwise.
+        """
         try:
             order_book = await self.get_order_book()
             response = session.place_order(
@@ -68,18 +79,25 @@ class TradingBot:
                     'target_amount': target_amount
                 }
 
-                logger.info(f"Открыта новая позиция: {self.active_position}")
+                logger.info(f"New position opened: {self.active_position}")
 
-                # Запускаем мониторинг позиции
+                # Start monitoring the position
                 self.monitor_task = asyncio.create_task(self.monitor_position())
 
                 return True
         except Exception as e:
-            logger.error(f"Ошибка при открытии позиции: {e}")
+            logger.error(f"Error while opening position: {e}")
         return False
 
     async def close_position(self) -> bool:
-        """Закрытие позиции"""
+        """Closes the active position.
+
+        Places a market order to sell the specified amount of the selected trading pair.
+        After closing, sends a notification with profit information and stops monitoring the position.
+
+        Returns:
+            bool: True if the position was closed successfully, False otherwise.
+        """
         try:
             order_book = await self.get_order_book()
             response = session.place_order(
@@ -95,25 +113,30 @@ class TradingBot:
                 bid_price = order_book.get('bid')
                 profit_percentage = ((bid_price / self.active_position['entry_price']) - 1) * 100
 
-                await self.send_notification(f"✅ Позиция закрыта с прибылью!\n"
-                                             f"Валютная пара: {self.active_position['symbol']}\n"
-                                             f"Процент прибыли: {profit_percentage:.2f}%\n"
-                                             f"Цена входа: {self.active_position['entry_price']}\n"
-                                             f"Цена выхода: {bid_price}")
-                logger.info(f"Позиция закрыта успешно: {self.active_position}")
+                await self.send_notification(f"✅ Position closed with profit!\n"
+                                             f"Trading Pair: {self.active_position['symbol']}\n"
+                                             f"Profit Percentage: {profit_percentage:.2f}%\n"
+                                             f"Entry Price: {self.active_position['entry_price']}\n"
+                                             f"Exit Price: {bid_price}")
+                logger.info(f"Position closed successfully: {self.active_position}")
                 self.active_position = None
 
-                # Останавливаем мониторинг позиции
+                # Stop monitoring the position
                 if self.monitor_task:
                     self.monitor_task.cancel()
                     self.monitor_task = None
                 return True
         except Exception as e:
-            logger.error(f"Ошибка при закрытии позиции: {e}")
+            logger.error(f"Error while closing position: {e}")
         return False
 
     async def monitor_position(self) -> None:
-        """Мониторинг открытой позиции"""
+        """Monitors the active position.
+
+        Continuously checks the current market prices and closes the position if the target price is reached.
+
+        This function runs indefinitely until the position is closed.
+        """
         while True:
             try:
                 if self.active_position:
@@ -122,134 +145,147 @@ class TradingBot:
                     ask_price = order_book.get('ask')
 
                     if bid_price is None or ask_price is None:
-                        logger.error("Не удалось получить цены для orderbook")
+                        logger.error("Failed to fetch prices from the order book")
                         continue
 
-                    # Вычисление прибыли
+                    # Check if the target price is reached
                     if bid_price >= self.active_position['target_price']:
-                        # Закрываем позицию при достижении целевой прибыли
+                        # Close the position when the target profit is reached
                         await self.close_position()
-
-
             except Exception as e:
-                logger.error(f"Ошибка при мониторинге позиции: {e}")
+                logger.error(f"Error while monitoring position: {e}")
 
             await asyncio.sleep(1)
 
     @staticmethod
-    async def send_notification(message):
-        """Отправка уведомления в Telegram"""
+    async def send_notification(message: str) -> None:
+        """Sends a notification to Telegram.
+
+        Sends the specified message to the Telegram chat using the bot.
+
+        Args:
+            message (str): The message to send.
+        """
         try:
             await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-            logger.info(f"Отправлено уведомление в Telegram: {message}")
+            logger.info(f"Sent notification to Telegram: {message}")
         except Exception as e:
-            logger.error(f"Ошибка при отправке уведомления в Telegram: {e}")
+            logger.error(f"Error while sending notification to Telegram: {e}")
 
     @staticmethod
-    def calculate_target(amount) -> float:
-        """Вычисление целевой цены"""
+    def calculate_target(amount: float) -> float:
+        """Calculates the target price based on the profit percentage.
+
+        Args:
+            amount (float): The initial amount for calculation (e.g., entry price or amount).
+
+        Returns:
+            float: The calculated target price based on the target profit percentage.
+        """
         return round(amount * (1 + TARGET_PROFIT_PERCENT / 100), 3)
 
     @staticmethod
     async def get_order_book() -> dict:
-        """Получение orderbook для получения цен покупки и продажи"""
+        """Fetches the order book for the specified trading pair.
+
+        Retrieves the current bid (buy) and ask (sell) prices from the order book.
+
+        Returns:
+            dict: A dictionary containing 'bid' and 'ask' prices.
+        """
         try:
             response = session.get_orderbook(category="spot", symbol=SYMBOL)
-            bid_price = float(response['result']['b'][0][0])  # Цена покупки
-            ask_price = float(response['result']['a'][0][0])  # Цена продажи
+            bid_price = float(response['result']['b'][0][0])  # Buy price
+            ask_price = float(response['result']['a'][0][0])  # Sell price
             return {'bid': bid_price, 'ask': ask_price}
         except Exception as e:
-            logger.error(f"Ошибка при получении orderbook: {e}")
+            logger.error(f"Error while fetching order book: {e}")
 
     @staticmethod
     async def start_bot():
+        """Starts the bot and begins polling for new messages."""
         await dp.start_polling(bot)
 
 
-# Инициализация бота
+# Bot initialization
 trading_bot = TradingBot()
 
 
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
+    """Handles the /start command."""
     await message.answer(
-        "👋 Привет! Я торговый бот для Bybit.\n"
-        "Доступные команды:\n"
-        "/trade - открыть новую позицию\n"
-        "/status - проверить текущую позицию"
+        "👋 Hello! I am a trading bot for Bybit.\n"
+        "Available commands:\n"
+        "/trade - open a new position\n"
+        "/status - check the current position"
     )
 
 
 @dp.message(Command("status"))
 async def status_command(message: types.Message):
+    """Handles the /status command."""
     if trading_bot.active_position:
         order_book = await trading_bot.get_order_book()
         current_price = order_book.get('bid')
         current_profit = ((current_price / trading_bot.active_position['entry_price']) - 1) * 100
 
         await message.answer(
-            f"📊 Текущая позиция:\n"
-            f"Валютная пара: {trading_bot.active_position['symbol']}\n"
-            f"Цена входа: {trading_bot.active_position['entry_price']}\n"
-            f"Текущая цена: {current_price}\n"
-            f"Текущая прибыль: {current_profit:.2f}%\n"
-            f"Целевая прибыль: {TARGET_PROFIT_PERCENT}%"
+            f"📊 Current position:\n"
+            f"Trading Pair: {trading_bot.active_position['symbol']}\n"
+            f"Entry Price: {trading_bot.active_position['entry_price']}\n"
+            f"Current Price: {current_price}\n"
+            f"Current Profit: {current_profit:.2f}%\n"
+            f"Target Profit: {TARGET_PROFIT_PERCENT}%"
         )
     else:
-        await message.answer("❌ Нет открытых позиций")
+        await message.answer("❌ No open positions")
 
 
 @dp.message(Command("trade"))
 async def trade_command(message: types.Message):
+    """Handles the /trade command to open a new position."""
     if trading_bot.active_position:
-        await message.answer("❌ У вас уже есть открытая позиция!")
+        await message.answer("❌ You already have an open position!")
         return
 
     try:
         if await trading_bot.open_position():
             await message.answer(
-                f"✅ Позиция открыта!\n"
-                f"Валютная пара: {trading_bot.active_position['symbol']}\n"
-                f"Цена входа: {trading_bot.active_position['entry_price']}\n"
-                f"Целевая цена: {trading_bot.active_position['target_price']}"
+                f"✅ Position opened!\n"
+                f"Trading Pair: {trading_bot.active_position['symbol']}\n"
+                f"Entry Price: {trading_bot.active_position['entry_price']}\n"
+                f"Target Price: {trading_bot.active_position['target_price']}"
             )
         else:
-            await message.answer("❌ Ошибка при открытии позиции")
+            await message.answer("❌ Error while opening position")
     except Exception as e:
-        await message.answer(f"❌ Произошла ошибка: {e}")
+        await message.answer(f"❌ An error occurred: {e}")
 
 
 async def set_main_menu(bot: Bot):
+    """Sets the main menu commands in the Telegram bot."""
     main_menu_commands = [
-        BotCommand(command='/start', description='Запустить бота'),
-        BotCommand(command='/trade', description='Открыть позицию'),
-        BotCommand(command='/status', description='Посмотреть текущую позицию'),
+        BotCommand(command='/start', description='Start the bot'),
+        BotCommand(command='/trade', description='Open a position'),
+        BotCommand(command='/status', description='Check current position'),
     ]
     await bot.set_my_commands(main_menu_commands)
 
 
 async def main():
-    # Проверка наличия всех необходимых переменных окружения
-    required_vars = ["API_KEY", "API_SECRET", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID"]
-    missing_vars = [var for var in required_vars if not env.str(var, "")]
-
-    if missing_vars:
-        logger.error(f"Отсутствуют необходимые переменные окружения: {', '.join(missing_vars)}")
+    """Main function to run the bot."""
+    # Check for missing required environment variables
+    if not all([BYBIT_API_KEY, BYBIT_API_SECRET, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, SYMBOL]):
+        logger.error("Missing one or more required environment variables")
         return
 
-    logger.info(f"Бот запущен. Валютная пара: {SYMBOL}, Целевая прибыль: {TARGET_PROFIT_PERCENT}%")
-    await trading_bot.send_notification(
-        f"🚀 Бот запущен.\n"
-        f"Валютная пара: {SYMBOL}\n"
-        f"Целевая прибыль: {TARGET_PROFIT_PERCENT}%\n"
-        f"Количество: {AMOUNT}")
-
-    # Добавление кнопок меню
+    # Set the Telegram bot commands
     await set_main_menu(bot)
 
-    # Запуск бота
+    # Start the bot
     await trading_bot.start_bot()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     asyncio.run(main())
