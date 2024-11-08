@@ -1,6 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
+from aiogram.types import BotCommand
 from pybit.unified_trading import HTTP
 import logging
 from environs import Env
@@ -215,6 +216,15 @@ async def trade_command(message: types.Message):
         await message.answer(f"❌ Произошла ошибка: {e}")
 
 
+async def set_main_menu(bot: Bot):
+    main_menu_commands = [
+        BotCommand(command='/start', description='Запустить бота'),
+        BotCommand(command='/trade', description='Открыть позицию'),
+        BotCommand(command='/status', description='Посмотреть текущую позицию'),
+    ]
+    await bot.set_my_commands(main_menu_commands)
+
+
 async def main():
     # Проверка наличия всех необходимых переменных окружения
     required_vars = ["API_KEY", "API_SECRET", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID"]
@@ -228,6 +238,9 @@ async def main():
     await trading_bot.send_notification(
         f"🚀 Бот запущен. Валютная пара: {SYMBOL}\n"
         f"Целевая прибыль: {TARGET_PROFIT_PERCENT}%")
+
+    # Добавление кнопок меню
+    await set_main_menu(bot)
 
     # Запуск бота
     await trading_bot.start_bot()
