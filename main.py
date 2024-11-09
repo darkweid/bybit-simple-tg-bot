@@ -11,7 +11,7 @@ env = Env()
 env.read_env()
 
 # Logging configuration
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format=("|%(asctime)s| %(levelname)s |%(message)s"), level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Loading configuration from .env
