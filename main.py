@@ -156,22 +156,7 @@ class TradingBot:
             except Exception as e:
                 logger.error(f"Error while monitoring position: {e}")
 
-            await asyncio.sleep(1)
-
-    @staticmethod
-    async def send_notification(message: str) -> None:
-        """Sends a notification to Telegram.
-
-        Sends the specified message to the Telegram chat using the bot.
-
-        Args:
-            message (str): The message to send.
-        """
-        try:
-            await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-            logger.info(f"Sent notification to Telegram: {message}")
-        except Exception as e:
-            logger.error(f"Error while sending notification to Telegram: {e}")
+            await asyncio.sleep(0.5)
 
     @staticmethod
     def calculate_target(amount: float) -> float:
@@ -205,6 +190,26 @@ class TradingBot:
 
 # Bot initialization
 trading_bot = TradingBot()
+
+
+async def send_notification(message: str) -> None:
+    """Sends a notification to Telegram.
+
+    Sends the specified message to the Telegram chat using the bot.
+
+    Args:
+        message (str): The message to send.
+    """
+    try:
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        logger.info(f"Sent notification to Telegram: {message}")
+    except Exception as e:
+        logger.error(f"Error while sending notification to Telegram: {e}")
+
+
+async def start_bot():
+    """Starts the bot and begins polling for new messages."""
+    await dp.start_polling(bot)
 
 
 @dp.message(Command("start"))
@@ -280,7 +285,7 @@ async def main():
     await set_main_menu(bot)
 
     # Start the bot
-    await trading_bot.start_bot()
+    await start_bot()
 
 
 if __name__ == '__main__':
