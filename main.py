@@ -29,7 +29,7 @@ dp = Dispatcher()
 
 # Initialize Bybit client
 session = HTTP(
-    testnet=True,
+    testnet=True,  # Change to False for using mainnet
     api_key=BYBIT_API_KEY,
     api_secret=BYBIT_API_SECRET
 )
@@ -113,11 +113,12 @@ class TradingBot:
                 bid_price = order_book.get('bid')
                 profit_percentage = ((bid_price / self.active_position['entry_price']) - 1) * 100
 
-                await self.send_notification(f"✅ Position closed with profit!\n"
-                                             f"Trading Pair: {self.active_position['symbol']}\n"
-                                             f"Profit Percentage: {profit_percentage:.2f}%\n"
-                                             f"Entry Price: {self.active_position['entry_price']}\n"
-                                             f"Exit Price: {bid_price}")
+                await send_notification(f"✅ Position closed!\n"
+                                        f"Trading Pair: {self.active_position['symbol']}\n"
+                                        f"Profit Percentage: {profit_percentage:.2f}%\n"
+                                        f"Entry Price: {self.active_position['entry_price']}\n"
+                                        f"Target Price: {self.active_position['target_price']}\n"
+                                        f"Exit Price: {bid_price}")
                 logger.info(f"Position closed successfully: {self.active_position}")
                 self.active_position = None
 
@@ -200,11 +201,6 @@ class TradingBot:
             return {'bid': bid_price, 'ask': ask_price}
         except Exception as e:
             logger.error(f"Error while fetching order book: {e}")
-
-    @staticmethod
-    async def start_bot():
-        """Starts the bot and begins polling for new messages."""
-        await dp.start_polling(bot)
 
 
 # Bot initialization
