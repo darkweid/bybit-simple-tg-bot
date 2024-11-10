@@ -3,7 +3,7 @@
 ## ENG 🇬🇧
 
 ### Description
-This is a simple trading bot for Bybit, designed to perform basic trading functions such as opening and closing positions automatically. It interacts with the Bybit API and sends notifications via Telegram, helping traders monitor market movements and execute trading strategies.
+This is a simple trading bot for Bybit, designed to perform basic trading functions such as opening and closing positions automatically. It interacts with the Bybit API via HTTP requests and sends notifications via Telegram, helping traders monitor market movements and execute trading strategies.
 
 ### Features
 - Automatically open and close positions on Bybit.
@@ -15,7 +15,7 @@ This is a simple trading bot for Bybit, designed to perform basic trading functi
 ### Technologies
 - Python 3
 - `aiogram` (for Telegram bot integration)
-- `pybit` (for interaction with Bybit API)
+- `requests` (for interaction with Bybit API via HTTP)
 - `environs` (for environment variable management)
 
 ### Requirements
@@ -25,6 +25,41 @@ This is a simple trading bot for Bybit, designed to perform basic trading functi
 - Environment variables configured in `.env` file
 
 ### Installation
+#### Docker Installation (Recommended)
+
+To run the bot with Docker, follow these steps:
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/darkweid/bybit-simple-tg-bot.git
+    cd bybit-simple-tg-bot
+    ```
+
+2. Build the Docker image:
+    ```bash
+    docker build -t bybit-tg-bot .
+    ```
+
+3. Create a `.env` file with the following content (same as below):
+    ```
+    API_KEY=your_bybit_api_key
+    API_SECRET=your_bybit_api_secret
+    TELEGRAM_TOKEN=your_telegram_bot_token
+    TELEGRAM_CHAT_ID=your_telegram_chat_id
+    SYMBOL=BTCUSDT # Example
+    TARGET_PROFIT_PERCENT=0.5  # Profit target
+    AMOUNT=0.001  # Trade amount (e.g. BTC for BTCUSDT pair)
+    ```
+
+4. Run the bot with Docker:
+    ```bash
+    docker run --env-file .env bybit-tg-bot
+    ```
+
+#### Manual Installation
+
+If you prefer to run the bot manually, follow these steps:
+
 1. Clone the repository:
     ```bash
     git clone https://github.com/darkweid/bybit-simple-tg-bot.git
@@ -48,17 +83,6 @@ This is a simple trading bot for Bybit, designed to perform basic trading functi
     TARGET_PROFIT_PERCENT=0.5  # Profit target
     AMOUNT=0.001  # Trade amount (e.g. BTC for BTCUSDT pair)
     ```
-    ### Example Trading Pairs
-    The bot supports a range of trading pairs for Bybit. You can specify the trading pair in your `.env` file using the `SYMBOL` variable. Here are some examples:
-
-    - `BTCUSDT` - Bitcoin to Tether
-    - `ETHUSDT` - Ethereum to Tether
-    - `SOLUSDT` - Solana to Tether
-    - `XRPUSDT` - Ripple to Tether
-    - `LTCUSDT` - Litecoin to Tether
-
-    Feel free to change the `SYMBOL` variable to match your preferred trading pair.
-    For the full list of available trading pairs on Bybit, visit [Bybit Markets](https://www.bybit.com/en-US/trade/spot).
 
 4. Run the bot:
     ```bash
@@ -70,8 +94,6 @@ This is a simple trading bot for Bybit, designed to perform basic trading functi
 - `/trade` - Open a new position.
 - `/status` - Check the status of the current open position.
 
-
-
 ### License
 This project is licensed under the MIT License.
 
@@ -82,7 +104,7 @@ This project is licensed under the MIT License.
 ## RUS🇷🇺
 
 ## Описание
-Это простой торговый бот для Bybit, который автоматически выполняет основные торговые функции, такие как открытие и закрытие позиций. Бот взаимодействует с API Bybit и отправляет уведомления через Telegram, помогая трейдерам отслеживать рыночные движения и исполнять торговые стратегии.
+Это простой торговый бот для Bybit, который автоматически выполняет основные торговые функции, такие как открытие и закрытие позиций. Бот взаимодействует с API Bybit через HTTP-запросы и отправляет уведомления через Telegram, помогая трейдерам отслеживать рыночные движения и исполнять торговые стратегии.
 
 ### Основные функции
 - Автоматическое открытие и закрытие позиций на Bybit.
@@ -94,7 +116,7 @@ This project is licensed under the MIT License.
 ### Технологии
 - Python 3
 - `aiogram` (для интеграции с Telegram)
-- `pybit` (для работы с API Bybit)
+- `requests` (для работы с API Bybit через HTTP)
 - `environs` (для управления переменными окружения)
 
 ### Требования
@@ -104,6 +126,41 @@ This project is licensed under the MIT License.
 - Переменные окружения, настроенные в файле `.env`
 
 ### Установка
+#### Установка через Docker (Рекомендуется)
+
+Чтобы запустить бота через Docker, выполните следующие шаги:
+
+1. Клонируйте репозиторий:
+    ```bash
+    git clone https://github.com/darkweid/bybit-simple-tg-bot.git
+    cd bybit-simple-tg-bot
+    ```
+
+2. Построите Docker-образ:
+    ```bash
+    docker build -t bybit-tg-bot .
+    ```
+
+3. Создайте файл `.env` со следующим содержанием (как указано ниже):
+    ```
+    API_KEY=ваш_ключ_от_bybit
+    API_SECRET=ваш_секретный_ключ_от_bybit
+    TELEGRAM_TOKEN=ваш_токен_бота_telegram
+    TELEGRAM_CHAT_ID=ваш_id_чата_telegram
+    SYMBOL=BTCUSDT
+    TARGET_PROFIT_PERCENT=0.5  # Пример целевой прибыли
+    AMOUNT=0.001  # Объем сделки в целевой валюте (например BTC для пары BTCUSDT)
+    ```
+
+4. Запустите бота через Docker:
+    ```bash
+    docker run --env-file .env bybit-tg-bot
+    ```
+
+#### Ручная установка
+
+Если вы предпочитаете запускать бота вручную, выполните следующие шаги:
+
 1. Клонируйте репозиторий:
     ```bash
     git clone https://github.com/darkweid/bybit-simple-tg-bot.git
@@ -127,16 +184,6 @@ This project is licensed under the MIT License.
     TARGET_PROFIT_PERCENT=0.5  # Пример целевой прибыли
     AMOUNT=0.001  # Объем сделки в целевой валюте (например BTC для пары BTCUSDT)
     ```
-    ### Примеры валютных пар
-    Бот поддерживает множество торговых пар для Bybit. Вы можете указать торговую пару в файле `.env`, используя переменную `SYMBOL`. Вот некоторые примеры:
-
-    - `BTCUSDT` - Bitcoin к Tether
-    - `ETHUSDT` - Ethereum к Tether
-    - `SOLUSDT` - Solana к Tether
-    - `XRPUSDT` - Ripple к Tether
-    - `LTCUSDT` - Litecoin к Tether
-    Вы можете изменить значение переменной `SYMBOL`, чтобы использовать предпочитаемую торговую пару.
-    Для получения полного списка доступных торговых пар на Bybit посетите [Рынки Bybit](https://www.bybit.com/en-US/trade/spot).
 
 4. Запустите бота:
     ```bash
@@ -147,8 +194,6 @@ This project is licensed under the MIT License.
 - `/start` - Запуск бота.
 - `/trade` - Открыть новую позицию.
 - `/status` - Проверить статус текущей открытой позиции.
-
-
 
 ### Лицензия
 Этот проект лицензирован под лицензией MIT.
