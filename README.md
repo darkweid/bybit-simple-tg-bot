@@ -31,8 +31,8 @@ To run the bot with Docker, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/darkweid/bybit-simple-tg-bot.git
-    cd bybit-simple-tg-bot
+    git clone https://github.com/darkweid/tg-trade-bot-http
+    cd tg-trade-bot-http
     ```
 
 2. Build the Docker image:
@@ -62,8 +62,8 @@ If you prefer to run the bot manually, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/darkweid/bybit-simple-tg-bot.git
-    cd bybit-simple-tg-bot
+    git clone https://github.com/darkweid/tg-trade-bot-http
+    cd tg-trade-bot-http
     ```
 
 2. Create a virtual environment and install dependencies:
@@ -132,8 +132,8 @@ This project is licensed under the MIT License.
 
 1. Клонируйте репозиторий:
     ```bash
-    git clone https://github.com/darkweid/bybit-simple-tg-bot.git
-    cd bybit-simple-tg-bot
+    git clone https://github.com/darkweid/tg-trade-bot-http
+    cd tg-trade-bot-http
     ```
 
 2. Построите Docker-образ:
@@ -163,8 +163,8 @@ This project is licensed under the MIT License.
 
 1. Клонируйте репозиторий:
     ```bash
-    git clone https://github.com/darkweid/bybit-simple-tg-bot.git
-    cd bybit-simple-tg-bot
+    git clone https://github.com/darkweid/tg-trade-bot-http
+    cd tg-trade-bot-http
     ```
 
 2. Создайте виртуальное окружение и установите зависимости:
